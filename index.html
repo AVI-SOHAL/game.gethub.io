@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🧱 Brick Breaker</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 3px solid white;
+      background: #000;
+    }
+
+    h1 {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧱 Brick Breaker</h1>
+  <canvas id="game" width="600" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const paddle = {
+      x: 250,
+      y: 370,
+      width: 100,
+      height: 15,
+      speed: 8,
+      dx: 0
+    };
+
+    const ball = {
+      x: 300,
+      y: 200,
+      radius: 10,
+      speed: 4,
+      dx: 4,
+      dy: -4
+    };
+
+    const brick = {
+      rowCount: 5,
+      columnCount: 7,
+      width: 75,
+      height: 20,
+      padding: 10,
+      offsetTop: 30,
+      offsetLeft: 35
+    };
+
+    let bricks = [];
+    let score = 0;
+
+    function initBricks() {
+      bricks = [];
+      for (let r = 0; r < brick.rowCount; r++) {
+        bricks[r] = [];
+        for (let c = 0; c < brick.columnCount; c++) {
+          bricks[r][c] = { x: 0, y: 0, status: 1 };
+        }
+      }
+    }
+
+    function drawPaddle() {
+      ctx.fillStyle = "#00ff99";
+      ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    }
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffcc00";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawBricks() {
+      for (let r = 0; r < brick.rowCount; r++) {
+        for (let c = 0; c < brick.columnCount; c++) {
+          if (bricks[r][c].status == 1) {
+            const bx = c * (brick.width + brick.padding) + brick.offsetLeft;
+            const by = r * (brick.height + brick.padding) + brick.offsetTop;
+            bricks[r][c].x = bx;
+            bricks[r][c].y = by;
+            ctx.fillStyle = "#00bfff";
+            ctx.fillRect(bx, by, brick.width, brick.height);
+          }
+        }
+      }
+    }
+
+    function drawScore() {
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "#fff";
+      ctx.fillText("Score: " + score, 10, 20);
+    }
+
+    function movePaddle() {
+      paddle.x += paddle.dx;
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.width > canvas.width)
+        paddle.x = canvas.width - paddle.width;
+    }
+
+    function moveBall() {
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      // Wall collision
+      if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0)
+        ball.dx *= -1;
+      if (ball.y - ball.radius < 0) ball.dy *= -1;
+
+      // Paddle collision
+      if (
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.width &&
+        ball.y + ball.radius > paddle.y
+      ) {
+        ball.dy *= -1;
+      }
+
+      // Bottom
+      if (ball.y + ball.radius > canvas.height) {
+        alert("💥 Game Over! Final Score: " + score);
+        document.location.reload();
+      }
+
+      // Brick collision
+      for (let r = 0; r < brick.rowCount; r++) {
+        for (let c = 0; c < brick.columnCount; c++) {
+          const b = bricks[r][c];
+          if (b.status === 1) {
+            if (
+              ball.x > b.x &&
+              ball.x < b.x + brick.width &&
+              ball.y > b.y &&
+              ball.y < b.y + brick.height
+            ) {
+              ball.dy *= -1;
+              b.status = 0;
+              score += 10;
+
+              if (score === brick.rowCount * brick.columnCount * 10) {
+                alert("🎉 You Win! Score: " + score);
+                document.location.reload();
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBricks();
+      drawPaddle();
+      drawBall();
+      drawScore();
+      movePaddle();
+      moveBall();
+      requestAnimationFrame(draw);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") paddle.dx = paddle.speed;
+      else if (e.key === "ArrowLeft") paddle.dx = -paddle.speed;
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (
+        e.key === "ArrowRight" ||
+        e.key === "ArrowLeft"
+      )
+        paddle.dx = 0;
+    });
+
+    initBricks();
+    draw();
+  </script>
+</body>
+</html>
